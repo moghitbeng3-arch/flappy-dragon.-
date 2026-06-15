@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Flappy Dragon MMO 🐉</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #010a04; display: flex; justify-content: center; align-items: center;
+    height: 100vh; overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif;
+    user-select: none; -webkit-tap-highlight-color: transparent; color: #fff;
+  }
+  canvas { display: block; border-radius: 16px; cursor: pointer; box-shadow: 0 0 40px rgba(0, 255, 100, 0.2); }
+  
+  .menu-pane {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    text-align: center; background: rgba(3, 15, 7, 0.98); padding: 1.2rem;
+    border-radius: 20px; border: 2px solid rgba(0, 255, 128, 0.4);
+    width: 340px; max-height: 540px; z-index: 10; display: flex; flex-direction: column; gap: 0.6rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+  }
+  .title { font-size: 1.6rem; font-weight: 900; color: #a0ffa0; text-shadow: 0 0 12px #00ff66; }
+  .sub { color: #8dbb9b; font-size: 0.8rem; margin-bottom: 2px; }
+  
+  .input-group { display: flex; flex-direction: column; gap: 0.4rem; text-align: right; }
+  .input-group label { font-size: 0.8rem; color: #00ffaa; font-weight: bold; }
+  .input-group input { 
+    background: #041a0b; border: 1px solid #00ff66; padding: 0.6rem; border-radius: 8px; 
+    color: #fff; text-align: center; font-size: 0.9rem; outline: none;
+  }
+  
+  .wallet-zone { display: flex; justify-content: center; gap: 0.5rem; margin: 0.2rem 0; }
+  .currency-display {
+    background: rgba(0, 45, 15, 0.6); padding: 0.3rem 0.7rem; border-radius: 50px;
+    font-weight: bold; font-size: 0.85rem; border: 1px solid #00ffaa;
+  }
+  .currency-display.gold-style { border-color: #ffd700; background: rgba(45, 40, 0, 0.6); }
+
+  .menu-buttons { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
+  button { font-family: inherit; border: none; cursor: pointer; transition: transform 0.1s; }
+  button:hover { transform: scale(1.02); } button:active { transform: scale(0.98); }
+  
+  .btn-main {
+    background: linear-gradient(135deg, #00ff66, #008833); color: #000; padding: 0.7rem;
+    font-size: 0.95rem; font-weight: 800; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 255, 100, 0.2);
+  }
+  .ad-btn { background: linear-gradient(135deg, #ffcc00, #ff6600) !important; color: #000 !important; }
+  .btn-secondary {
+    background: #0f2d17; color: #a0ffa0; padding: 0.6rem; font-size: 0.9rem; font-weight: 700; border-radius: 12px;
+    border: 1px solid rgba(0, 255, 100, 0.2);
+  }
+  .btn-back { background: #2b1111; color: #ffa0a0; padding: 0.5rem; font-size: 0.8rem; border-radius: 10px; border: 1px solid rgba(255,0,0,0.2); }
+  
+  .tabs { display: flex; gap: 0.3rem; background: #041409; padding: 0.2rem; border-radius: 10px; }
+  .tab-btn { flex: 1; background: transparent; color: #6fa380; padding: 0.4rem; font-size: 0.75rem; font-weight: bold; border-radius: 8px; }
+  .tab-btn.active { background: #00ff66; color: #000; }
+  .billing-tab { background: rgba(255, 200, 0, 0.1); color: #ffcc00; }
+  
+  .section-title {
+    text-align: right; font-size: 0.8rem; color: #00ffaa; font-weight: bold; padding: 0.2rem 0.5rem;
+    background: rgba(0, 255, 100, 0.05); border-right: 3px solid #00ff66; margin-top: 0.3rem; border-radius: 0 4px 4px 0;
+  }
+  .scroll-area { flex: 1; overflow-y: auto; padding-right: 0.2rem; display: flex; flex-direction: column; gap: 0.4rem; margin: 0.4rem 0; }
+  .scroll-area::-webkit-scrollbar { width: 4px; }
+  .scroll-area::-webkit-scrollbar-thumb { background: #00ff66; border-radius: 10px; }
+  
+  .shop-item {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(0,255,100,0.08); border-radius: 10px;
+    padding: 0.4rem 0.6rem; display: flex; justify-content: space-between; align-items: center; text-align: right;
+  }
+  .item-core { display: flex; align-items: center; flex: 1; }
+  .item-visual { font-size: 1.3rem; margin-left: 0.5rem; display: flex; align-items: center; }
+  .item-info .item-name { font-weight: bold; color: #fff; font-size: 0.8rem;}
+  .item-info .item-meta { font-size: 0.7rem; color: #7fa489; }
+  .btn-buy { background: #00aa44; color: #fff; font-size: 0.7rem; padding: 0.3rem 0.5rem; border-radius: 6px; font-weight: bold; }
+  .btn-buy.gem-cost { background: #9900cc; }
+  .btn-buy.owned { background: #222; color: #888; cursor: default; }
+  .btn-buy.active-equip { background: #00ff66; color: #000; }
+  
+  .modal-pane { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 100; display: flex; justify-content: center; align-items: center; }
+  .modal-content { background: #061a0d; border: 2px solid #ffcc00; padding: 1.5rem; border-radius: 20px; text-align: center; width: 310px; display: flex; flex-direction: column; gap: 0.6rem;}
+  .pack { background: rgba(255,200,0,0.05); border: 1px solid rgba(255,200,0,0.2); padding: 0.6rem; border-radius: 10px; display: flex; justify-content: space-between; cursor: pointer; font-weight: bold; font-size: 0.85rem;}
+  .pack:hover { background: rgba(255,200,0,0.15); }
+  
+  .ad-overlay { position: fixed; top:0; left:0; width:100vw; height:100vh; background:#000; z-index:200; display:flex; justify-content:center; align-items:center; }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+  .reward-zone { background: rgba(0, 255, 100, 0.1); padding: 0.4rem; border-radius: 8px; font-size: 0.85rem; }
+  
+  /* شاشة التحميل السريعة لعدم إظهار واجهة التسجيل إذا كان هناك حساب محفوظ */
+  #loading-screen { position: fixed; top:0; left:0; width:100vw; height:100vh; background:#010a04; z-index:300; display:flex; justify-content:center; align-items:center; color:#00ffaa; font-weight:bold; font-size:1.2rem; }
+</style>
+</head>
+<body>
+
+<div id="loading-screen">جارِ استرجاع الحساب... 🐉</div>
+
+<canvas id="c" width="360" height="560"></canvas>
+
+<div id="ui-container">
+  
+  <div id="auth-pane" class="menu-pane" style="display: none;">
+    <div class="title">🔐 نظام الحسابات الموحد</div>
+    <div class="sub">سجل دخولك أو أنشئ حساباً لحفظ بياناتك</div>
+    
+    <div class="input-group">
+      <label>اسم المستخدم:</label>
+      <input type="text" id="auth-user" placeholder="مثال: dragon99">
+    </div>
+    <div class="input-group">
+      <label>كلمة السر:</label>
+      <input type="password" id="auth-pass" placeholder="••••••••">
+    </div>
+    
+    <div class="menu-buttons" style="margin-top: 0.5rem;">
+      <button id="btn-login" class="btn-main">🔑 تسجيل الدخول</button>
+      <button id="btn-register" class="btn-secondary">📝 إنشاء حساب جديد</button>
+    </div>
+    <div id="auth-msg" style="color: #ff4444; font-size: 0.75rem; font-weight: bold; min-height: 15px;"></div>
+  </div>
+
+  <div id="main-menu" class="menu-pane" style="display: none;">
+    <div class="title">🐉 Flappy Dragon</div>
+    <div id="welcome-user" class="sub" style="color:#00ffaa; font-weight:bold;">مرحباً بك!</div>
+    <div class="wallet-zone">
+      <div class="currency-display gold-style">🪙 <span id="menu-gold">0</span></div>
+      <div class="currency-display">💎 <span id="menu-gems">0</span></div>
+    </div>
+    <div class="menu-buttons">
+      <button id="btn-play" class="btn-main">⚔️ بدء اللعب</button>
+      <button id="btn-open-shop" class="btn-secondary">🏪 المتجر الملكي</button>
+      <button id="btn-open-vault" class="btn-secondary">📦 الخزنة السرية</button>
+      <button id="btn-logout" class="btn-back" style="margin-top:0.5rem;">🚪 تسجيل الخروج وتبديل الحساب</button>
+    </div>
+  </div>
+
+  <div id="shop-pane" class="menu-pane" style="display: none;">
+    <div class="title">🏪 المتجر الملكي</div>
+    <div class="wallet-zone">
+      <div class="currency-display gold-style">🪙 <span id="shop-gold">0</span></div>
+      <div class="currency-display">💎 <span id="shop-gems">0</span></div>
+    </div>
+    <div class="tabs">
+      <button id="tab-skins" class="tab-btn active">🟢 السكنات</button>
+      <button id="tab-effects" class="tab-btn">✨ المؤثرات</button>
+      <button id="tab-billing" class="tab-btn billing-tab">⚡ الشحن</button>
+    </div>
+    <div id="shop-items-list" class="scroll-area"></div>
+    <button id="btn-close-shop" class="btn-back">⬅️ العودة للقائمة</button>
+  </div>
+
+  <div id="billing-modal" class="modal-pane" style="display: none;">
+    <div class="modal-content">
+      <h3 style="color:#ffcc00">💳 باقات الشحن الرسمية</h3>
+      <p class="sub">اختر الباقة لفتح واجهة بطاقة الدفع</p>
+      <div class="billing-packages">
+        <div class="pack" onclick="openPaymentGate(500, 1.99)"><span>💎 500 جوهرة</span><span style="color:#ffcc00">$1.99</span></div>
+        <div class="pack" onclick="openPaymentGate(1500, 4.99)"><span>💎 1500 جوهرة</span><span style="color:#ffcc00">$4.99</span></div>
+        <div class="pack" onclick="openPaymentGate(5000, 12.99)"><span>💎 5000 جوهرة</span><span style="color:#ffcc00">$12.99</span></div>
+        <div class="pack" onclick="openPaymentGate(12000, 24.99)"><span>💎 12000 جوهرة</span><span style="color:#ffcc00">$24.99</span></div>
+      </div>
+      <button id="btn-close-billing" class="btn-back">إلغاء</button>
+    </div>
+  </div>
+
+  <div id="card-modal" class="modal-pane" style="display: none;">
+    <div class="modal-content" style="border-color: #00ffaa;">
+      <h3 style="color:#00ffaa">🔒 نافذة الدفع الآمن</h3>
+      <p class="sub" id="payment-desc">شحن 0 جوهرة</p>
+      <div class="input-group">
+        <label>رقم البطاقة (16 رقم):</label>
+        <input type="text" id="card-num" placeholder="4000 1234 5678 9010" maxlength="19">
+      </div>
+      <div style="display:flex; gap:0.5rem;">
+        <div class="input-group" style="flex:1;">
+          <label>التاريخ:</label>
+          <input type="text" id="card-exp" placeholder="MM/YY" maxlength="5">
+        </div>
+        <div class="input-group" style="flex:1;">
+          <label>رمز الكود (CVV):</label>
+          <input type="password" id="card-cvv" placeholder="123" maxlength="3">
+        </div>
+      </div>
+      <button id="btn-confirm-pay" class="btn-main" style="margin-top:0.5rem; background:linear-gradient(135deg, #00ffaa, #005533)">💳 تأكيد عملية الدفع</button>
+      <button id="btn-cancel-pay" class="btn-back">إلغاء العملية</button>
+    </div>
+  </div>
+
+  <div id="vault-pane" class="menu-pane" style="display: none;">
+    <div class="title">📦 الخزنة السرية</div>
+    <div class="sub">تجهيز المظهر والمؤثر بشكل منفصل للحساب</div>
+    <div class="scroll-area" id="vault-scroll-container"></div>
+    <button id="btn-close-vault" class="btn-back">⬅️ العودة للقائمة</button>
+  </div>
+
+  <div id="gameover-pane" class="menu-pane" style="display: none;">
+    <div class="title" style="color:#ff4466">💀 سقط التنين!</div>
+    <div class="sub">النقاط: <span id="final-score" style="color:#00ff66; font-size:1.5rem; font-weight:bold;">0</span></div>
+    <div style="color:#6e9277; font-size:0.8rem;">🏆 الأفضل للحساب: <span id="final-best">0</span></div>
+    <div class="reward-zone">
+      <span style="color:#ffd700; font-weight:bold;">🪙 الذهب المحصّل: <span id="gold-earned">0</span></span>
+    </div>
+    <div class="menu-buttons">
+      <button id="btn-revive-ad" class="btn-main ad-btn">📺 شاهد إعلان للاستمرار</button>
+      <button id="btn-restart" class="btn-secondary">🔄 إعادة المحاولة</button>
+      <button id="btn-home" class="btn-secondary">🏠 القائمة الرئيسية</button>
+    </div>
+  </div>
+
+  <div id="ad-screen" class="ad-overlay" style="display: none;">
+    <div style="text-align:center;">
+      <h3>🎬 جارٍ عرض الإعلان والدعم...</h3>
+      <div style="width:40px; height:40px; border:4px solid #222; border-top:4px solid #ffcc00; border-radius:50%; margin:1.5rem auto; animation:spin 1s linear infinite;"></div>
+      <div id="ad-countdown" style="font-size:2rem; font-weight:bold; color:#ffcc00;">5</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+const W = 360, H = 560;
+
+// المجموعات الكاملة: 20 سكن و20 مؤثر
+const gameItems = [
+  { id: 'skin-1', type: 'skins', currency: 'gold', name: 'المشع الأخضر الأساسي', cost: 0, visual: '🟢', c1: '#00ff66', c2: '#005511' },
+  { id: 'skin-2', type: 'skins', currency: 'gold', name: 'التنين الملكي الذهبي', cost: 100, visual: '👑', c1: '#ffd700', c2: '#8c6b00' },
+  { id: 'skin-3', type: 'skins', currency: 'gold', name: 'تنين الياقوت اللهبي', cost: 200, visual: '🔴', c1: '#ff2255', c2: '#660011' },
+  { id: 'skin-4', type: 'skins', currency: 'gold', name: 'السيبراني المتطور الآلي', cost: 300, visual: '🤖', c1: '#00ffff', c2: '#004466' },
+  { id: 'skin-5', type: 'skins', currency: 'gold', name: 'التنين البنفسجي الغامض', cost: 400, visual: '🔮', c1: '#a300ff', c2: '#3a005c' },
+  { id: 'skin-6', type: 'skins', currency: 'gold', name: 'المحيط الأزرق العتيق', cost: 500, visual: '🔵', c1: '#0066ff', c2: '#002255' },
+  { id: 'skin-7', type: 'skins', currency: 'gold', name: 'تنين الصحراء الناري', cost: 600, visual: '🍊', c1: '#ff6600', c2: '#5c2400' },
+  { id: 'skin-8', type: 'skins', currency: 'gold', name: 'الشبح الأبيض الطائر', cost: 700, visual: '👻', c1: '#ffffff', c2: '#555555' },
+  { id: 'skin-9', type: 'skins', currency: 'gold', name: 'التنين الوردي اللطيف', cost: 800, visual: '🌸', c1: '#ff66cc', c2: '#661144' },
+  { id: 'skin-10', type: 'skins', currency: 'gold', name: 'البركاني المظلم الصخري', cost: 1000, visual: '🌋', c1: '#441100', c2: '#110000' },
+  { id: 'skin-11', type: 'skins', currency: 'gems', name: 'تنين الألماس الأسطوري', cost: 50, visual: '💎', c1: '#e0ffff', c2: '#66cccc' },
+  { id: 'skin-12', type: 'skins', currency: 'gems', name: 'الملاك السماوي النوراني', cost: 100, visual: '😇', c1: '#ffffcc', c2: '#ffcc00' },
+  { id: 'skin-13', type: 'skins', currency: 'gems', name: 'تنين البرق والرعد الخارق', cost: 150, visual: '⚡', c1: '#ffff00', c2: '#888800' },
+  { id: 'skin-14', type: 'skins', currency: 'gems', name: 'الفضائي القادم من المريخ', cost: 200, visual: '👽', c1: '#33cc33', c2: '#114411' },
+  { id: 'skin-15', type: 'skins', currency: 'gems', name: 'تنين النينجا السري الظلي', cost: 250, visual: '🥷', c1: '#222222', c2: '#050505' },
+  { id: 'skin-16', type: 'skins', currency: 'gems', name: 'تنين الهالوين المخيف', cost: 300, visual: '🎃', c1: '#ff9900', c2: '#331100' },
+  { id: 'skin-17', type: 'skins', currency: 'gems', name: 'القرصان المرعب الثائر', cost: 350, visual: '🏴‍☠️', c1: '#ff3333', c2: '#220000' },
+  { id: 'skin-18', type: 'skins', currency: 'gems', name: 'وحش الميكا المدرع الثقيل', cost: 400, visual: '⚙️', c1: '#aaaaaa', c2: '#333333' },
+  { id: 'skin-19', type: 'skins', currency: 'gems', name: 'ملك التنانين الإمبراطوري', cost: 500, visual: '👑', c1: '#ff00aa', c2: '#550033' },
+  { id: 'skin-20', type: 'skins', currency: 'gems', name: 'تنين الثقب الأسود الكوني', cost: 1000, visual: '🌌', c1: '#0d001a', c2: '#000000' },
+
+  { id: 'eff-1', type: 'effects', currency: 'gold', name: 'شرارات النيون الخضراء', cost: 0, visual: '✨', c1: '#00ff66' },
+  { id: 'eff-2', type: 'effects', currency: 'gold', name: 'غبار الذهب الملكي', cost: 100, visual: '🟡', c1: '#ffd700' },
+  { id: 'eff-3', type: 'effects', currency: 'gold', name: 'اللهب الأحمر الحارق', cost: 200, visual: '🔥', c1: '#ff3300' },
+  { id: 'eff-4', type: 'effects', currency: 'gold', name: 'الوميض السيبراني الأزرق', cost: 300, visual: '⚡', c1: '#00ffff' },
+  { id: 'eff-5', type: 'effects', currency: 'gold', name: 'البريق الأرجواني الساحر', cost: 400, visual: '🔮', c1: '#cc33ff' },
+  { id: 'eff-6', type: 'effects', currency: 'gold', name: 'فقاعات الماء الثلجية', cost: 500, visual: '🫧', c1: '#3399ff' },
+  { id: 'eff-7', type: 'effects', currency: 'gold', name: 'الدخان الأسود الغامض', cost: 600, visual: '💨', c1: '#555555' },
+  { id: 'eff-8', type: 'effects', currency: 'gold', name: 'الوهج الوردي اللامع', cost: 700, visual: '💖', c1: '#ff66cc' },
+  { id: 'eff-9', type: 'effects', currency: 'gold', name: 'أوراق الشجر الخضراء', cost: 800, visual: '🍃', c1: '#00cc44' },
+  { id: 'eff-10', type: 'effects', currency: 'gold', name: 'الحمم البركانية المنصهرة', cost: 1000, visual: '☄️', c1: '#ff3300' },
+  { id: 'eff-11', type: 'effects', currency: 'gems', name: 'غبار الماس البراق', cost: 300, visual: '💎', c1: '#ffffff' },
+  { id: 'eff-12', type: 'effects', currency: 'gems', name: 'البريق المقدس الملاكي', cost: 60, visual: '🌟', c1: '#ffff99' },
+  { id: 'eff-13', type: 'effects', currency: 'gems', name: 'الصواعق الكهربائية النادرة', cost: 120, visual: '⚡', c1: '#ffff00' },
+  { id: 'eff-14', type: 'effects', currency: 'gems', name: 'الغاز الفضائي الأخضر', cost: 150, visual: '🧪', c1: '#33ff33' },
+  { id: 'eff-15', type: 'effects', currency: 'gems', name: 'ظلال النينجا المتلاشية', cost: 180, visual: '👤', c1: '#111111' },
+  { id: 'eff-16', type: 'effects', currency: 'gems', name: 'شظايا الحلوى اللذيذة', cost: 200, visual: '🍬', c1: '#ff99cc' },
+  { id: 'eff-17', type: 'effects', currency: 'gems', name: 'الرماد الدموي المتطاير', cost: 250, visual: '🩸', c1: '#990000' },
+  { id: 'eff-18', type: 'effects', currency: 'gems', name
